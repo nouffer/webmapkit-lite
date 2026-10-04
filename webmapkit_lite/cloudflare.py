@@ -7,13 +7,13 @@ import urllib.error
 import urllib.parse
 import urllib.request
 API = os.environ.get('WEBMAPKIT_CF_API', 'https://api.cloudflare.com/client/v4').rstrip('/')
-TOKEN_NAME = 'Web Map Kit'
+CF_KEY_LABEL = 'Web Map Kit'
 PERMISSIONS = [{'key': 'workers_r2', 'type': 'edit'}]
 DASH = 'https://dash.cloudflare.com'
 SIGNUP_URL = DASH + '/sign-up'
 
 def token_url():
-    q = urllib.parse.urlencode({'permissionGroupKeys': json.dumps(PERMISSIONS, separators=(',', ':')), 'accountId': '*', 'zoneId': 'all', 'name': TOKEN_NAME})
+    q = urllib.parse.urlencode({'permissionGroupKeys': json.dumps(PERMISSIONS, separators=(',', ':')), 'accountId': '*', 'zoneId': 'all', 'name': CF_KEY_LABEL})
     return DASH + '/profile/api-tokens?' + q
 
 def r2_url(account_id=None):

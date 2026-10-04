@@ -206,7 +206,7 @@ class PublishWebMap(QgsProcessingAlgorithm):
     ACCOUNT = 'ACCOUNT'
     BUCKET = 'BUCKET'
     ACCESS_KEY = 'ACCESS_KEY'
-    SECRET = 'SECRET'
+    R2_SK = 'SECRET'
     PUBLIC_URL = 'PUBLIC_URL'
     REMEMBER = 'REMEMBER'
     PROJECT_ID = 'PROJECT_ID'
@@ -248,7 +248,7 @@ class PublishWebMap(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterString(self.ACCOUNT, self.tr('Cloudflare Account ID'), defaultValue=st.value(SETTINGS + 'account', '')))
         self.addParameter(QgsProcessingParameterString(self.BUCKET, self.tr('R2 bucket name'), defaultValue=st.value(SETTINGS + 'bucket', '')))
         self.addParameter(QgsProcessingParameterString(self.ACCESS_KEY, self.tr('R2 Access Key ID'), defaultValue=st.value(SETTINGS + 'access_key', '')))
-        self.addParameter(QgsProcessingParameterString(self.SECRET, self.tr('R2 Secret Access Key'), defaultValue=st.value(SETTINGS + 'secret', '')))
+        self.addParameter(QgsProcessingParameterString(self.R2_SK, self.tr('R2 Secret Access Key'), defaultValue=st.value(SETTINGS + 'secret', '')))
         self.addParameter(QgsProcessingParameterString(self.PUBLIC_URL, self.tr('Bucket public URL (r2.dev or your domain)'), defaultValue=st.value(SETTINGS + 'public_url', '')))
         self.addParameter(QgsProcessingParameterBoolean(self.REMEMBER, self.tr('Remember these settings on this computer'), defaultValue=True))
         for pid, label in ((self.PROJECT_ID, 'Project id (set by the Web Map Kit window)'), (self.PROJECT, 'Project name')):
@@ -264,7 +264,7 @@ class PublishWebMap(QgsProcessingAlgorithm):
         account = self.parameterAsString(parameters, self.ACCOUNT, context).strip()
         bucket = self.parameterAsString(parameters, self.BUCKET, context).strip()
         ak = self.parameterAsString(parameters, self.ACCESS_KEY, context).strip()
-        sk = self.parameterAsString(parameters, self.SECRET, context).strip()
+        sk = self.parameterAsString(parameters, self.R2_SK, context).strip()
         public = self.parameterAsString(parameters, self.PUBLIC_URL, context).strip().rstrip('/')
         missing = [n for n, v in [('Account ID', account), ('bucket', bucket), ('Access Key ID', ak), ('Secret Access Key', sk)] if not v]
         if missing:

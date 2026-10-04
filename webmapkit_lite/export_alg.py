@@ -213,7 +213,7 @@ def mbtiles_to_pmtiles(mbtiles_path, pmtiles_path, bounds, feedback=None):
         dropped += bad
         if gz is None:
             gz = data[:2] == b'\x1f\x8b'
-        h = hashlib.sha1(data).digest()
+        h = hashlib.sha256(data).digest()
         if h in seen:
             last = entries[-1]
             if tid == last[0] + last[3] and last[1] == seen[h]:
