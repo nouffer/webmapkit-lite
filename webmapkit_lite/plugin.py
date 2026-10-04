@@ -5,6 +5,7 @@ from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsApplication
+from .net import open_url
 from .preview import PreviewServer
 from .provider import WebMapKitProvider
 from .edition import NAME, UPGRADE_TEXT, open_upgrade
@@ -15,7 +16,7 @@ GUIDE_URL = 'https://mapship.link/webmap-kit/guide/'
 def open_guide(*_):
     import urllib.request
     try:
-        urllib.request.urlopen(urllib.request.Request(GUIDE_URL, method='HEAD'), timeout=3).close()
+        open_url(urllib.request.Request(GUIDE_URL, method='HEAD'), timeout=3).close()
         QDesktopServices.openUrl(QUrl(GUIDE_URL))
     except Exception:
         QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.join(HERE, 'help', 'index.html')))

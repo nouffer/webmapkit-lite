@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Web Map Kit Lite · GPL-2.0-or-later · Byteloom (Pvt) Ltd · https://mapship.link/webmap-kit/
+import contextlib
 import gzip
 import hashlib
 import json
@@ -252,7 +253,8 @@ def mbtiles_to_pmtiles(mbtiles_path, pmtiles_path, bounds, feedback=None):
     header += struct.pack('<iiii', e7(w), e7(s), e7(e), e7(n_))
     header += bytes([min(zmax, max(zmin, zmin + 2))])
     header += struct.pack('<ii', e7((w + e) / 2), e7((s + n_) / 2))
-    assert len(header) == 127
+    if len(header) != 127:
+        raise RuntimeError('PMTiles header has the wrong size')
     with open(pmtiles_path, 'wb') as f:
         f.write(header)
         f.write(root)
@@ -324,20 +326,16 @@ def symbol_style(symbol, kind):
     alpha = symbol.color().alphaF() * symbol.opacity()
     sl = symbol.symbolLayer(0) if symbol.symbolLayerCount() else None
     if kind == 'polygon':
-        try:
+        with contextlib.suppress(Exception):
             from qgis.PyQt.QtCore import Qt
             if sl is not None and hasattr(sl, 'brushStyle') and (sl.brushStyle() == Qt.NoBrush):
                 alpha = 0.0
-        except Exception:
-            pass
         out['opacity'] = round(alpha, 2)
         if sl is not None and hasattr(sl, 'strokeColor'):
             pen_none = False
-            try:
+            with contextlib.suppress(Exception):
                 from qgis.PyQt.QtCore import Qt
                 pen_none = sl.strokeStyle() == Qt.NoPen
-            except Exception:
-                pass
             if pen_none or sl.strokeColor().alpha() == 0:
                 out['outline'] = 'none'
             else:
@@ -407,11 +405,9 @@ def data_defined_size(layer, kind, warnings):
     return None
 
 def json_value(v):
-    try:
+    with contextlib.suppress(Exception):
         if v is None or (hasattr(v, 'isNull') and v.isNull()):
             return None
-    except Exception:
-        pass
     if isinstance(v, (int, float, str, bool)):
         return v
     try:
@@ -492,15 +488,13 @@ def layer_style(layer, kind, warnings):
         style['kind'] = 'single'
         return style
     warnings.append('"%s": style type "%s" is not supported yet, so one colour is used. Single, categorized and graduated styles are copied exactly.' % (layer.name(), r.type() if r else 'none'))
-    try:
+    with contextlib.suppress(Exception):
         from qgis.core import QgsRenderContext
         syms = r.symbols(QgsRenderContext())
         if syms:
             style = symbol_style(syms[0], kind)
             style['kind'] = 'single'
             return style
-    except Exception:
-        pass
     return {'kind': 'single'}
 
 def scale_to_zoom(scale):
@@ -551,6 +545,16 @@ def photo_column(layer, sample=100):
             return f.name()
     return None
 
+def _search_point(f, kind, xf):
+    try:
+        g = f.geometry()
+        g = g if kind == 'point' else g.pointOnSurface()
+        g.transform(xf)
+        p = g.asPoint() if not g.isMultipart() else g.asMultiPoint()[0]
+        return [round(p.x(), 6), round(p.y(), 6)]
+    except Exception:
+        return None
+
 def renderer_filter(layer):
     try:
         from qgis.core import QgsRenderContext
@@ -587,11 +591,9 @@ def popup_fields(layer, title):
     for i, f in enumerate(layer.fields()):
         if f.name() == title or HIDDEN_FIELDS.match(f.name()):
             continue
-        try:
+        with contextlib.suppress(Exception):
             if layer.editorWidgetSetup(i).type() == 'Hidden':
                 continue
-        except Exception:
-            pass
         alias = layer.attributeAlias(i)
         item = {'field': f.name()}
         if alias:
@@ -606,17 +608,13 @@ def label_settings(layer):
     if s.isExpression or s.fieldName not in [f.name() for f in layer.fields()]:
         return None
     lab = {'field': s.fieldName}
-    try:
+    with contextlib.suppress(Exception):
         fmt = s.format()
         lab['color'] = hex_color(fmt.color())
         lab['size'] = round(max(9, min(22, to_px(fmt.size(), fmt.sizeUnit()))), 1)
-    except Exception:
-        pass
-    try:
+    with contextlib.suppress(Exception):
         if s.scaleVisibility and s.minimumScale:
             lab['minzoom'] = scale_to_zoom(s.minimumScale)
-    except Exception:
-        pass
     return lab
 
 def safe_id(name, used):
@@ -629,6 +627,16 @@ def safe_id(name, used):
         i += 1
     used.add(cand)
     return cand
+
+def _dense_parts(g, xf, interval):
+    from qgis.core import QgsPointXY
+    try:
+        g.transform(xf)
+        g = g.densifyByDistance(interval)
+        g.convertToMultiType()
+        return [list(pl) + [QgsPointXY(pl[-1])] for pl in g.asMultiPolyline() if len(pl) >= 2]
+    except Exception:
+        return None
 
 def densified_copy(layer, max_zoom, context):
     from qgis.core import QgsPointXY
@@ -646,17 +654,10 @@ def densified_copy(layer, max_zoom, context):
         nf = QgsFeature(mem.fields())
         nf.setAttributes(f.attributes())
         if f.hasGeometry():
-            g = f.geometry()
-            try:
-                g.transform(xf)
-                g = g.densifyByDistance(interval)
-                g.convertToMultiType()
-                parts = [list(pl) + [QgsPointXY(pl[-1])] for pl in g.asMultiPolyline() if len(pl) >= 2]
-                if not parts:
-                    continue
-                nf.setGeometry(QgsGeometry.fromMultiPolylineXY(parts))
-            except Exception:
+            parts = _dense_parts(f.geometry(), xf, interval)
+            if not parts:
                 continue
+            nf.setGeometry(QgsGeometry.fromMultiPolylineXY(parts))
         feats.append(nf)
     pr.addFeatures(feats)
     return mem
@@ -676,13 +677,18 @@ def _tiles_in_bbox(w, s, e, n, z):
     y0, y1 = (max(0, min(m, ty(n))), max(0, min(m, ty(s))))
     return (x1 - x0 + 1) * (y1 - y0 + 1)
 
+def _extent_in(lyr, crs, context):
+    try:
+        return QgsCoordinateTransform(lyr.crs(), crs, context.transformContext()).transformBoundingBox(lyr.extent())
+    except Exception:
+        return None
+
 def plan_zooms(layers, minz, maxz, context, feedback):
     wgs84 = QgsCoordinateReferenceSystem('EPSG:4326')
     area, pts, npts = (None, None, 0)
     for lyr in layers:
-        try:
-            ext = QgsCoordinateTransform(lyr.crs(), wgs84, context.transformContext()).transformBoundingBox(lyr.extent())
-        except Exception:
+        ext = _extent_in(lyr, wgs84, context)
+        if ext is None:
             continue
         if ext.isEmpty() and geometry_kind(lyr) != 'point':
             continue
@@ -888,15 +894,13 @@ class ExportWebMap(QgsProcessingAlgorithm):
             kind = geometry_kind(layer)
             lid = safe_id(layer.name(), used_ids)
             xf = QgsCoordinateTransform(layer.crs(), wgs84, context.transformContext())
-            try:
+            with contextlib.suppress(Exception):
                 ext = xf.transformBoundingBox(layer.extent())
                 if layer.featureCount() != 0 and (not ext.isNull()) and (ext.width() >= 0) and (ext.height() >= 0):
                     if full_extent is None:
                         full_extent = QgsRectangle(ext)
                     else:
                         full_extent.combineExtentWith(ext)
-            except Exception:
-                pass
             style = layer_style(layer, kind, warnings)
             dds = data_defined_size(layer, kind, warnings)
             if dds:
@@ -983,15 +987,11 @@ class ExportWebMap(QgsProcessingAlgorithm):
                     v = json_value(f[tfield])
                     if v in (None, '') or not f.hasGeometry() or (not drawn(f)):
                         continue
-                    try:
-                        g = f.geometry()
-                        g = g if kind == 'point' else g.pointOnSurface()
-                        g.transform(xf)
-                        p = g.asPoint() if not g.isMultipart() else g.asMultiPoint()[0]
-                        search_rows.append({'t': str(v), 'c': [round(p.x(), 6), round(p.y(), 6)], 'l': layer.name(), '_vis': entry.get('visible', True), '_order': len(cfg_layers)})
-                        count += 1
-                    except Exception:
+                    c = _search_point(f, kind, xf)
+                    if c is None:
                         continue
+                    search_rows.append({'t': str(v), 'c': c, 'l': layer.name(), '_vis': entry.get('visible', True), '_order': len(cfg_layers)})
+                    count += 1
                     if count >= 50000:
                         warnings.append('"%s": search index limited to the first 50,000 features.' % layer.name())
                         break
@@ -1012,15 +1012,11 @@ class ExportWebMap(QgsProcessingAlgorithm):
         if full_extent is not None and (not full_extent.isNull()):
             pad = max(full_extent.width(), full_extent.height()) * 0.01 or 0.001
             roi = QgsRectangle(max(-180, full_extent.xMinimum() - pad), max(-WEB_MERCATOR_MAX_LAT, full_extent.yMinimum() - pad), min(180, full_extent.xMaximum() + pad), min(WEB_MERCATOR_MAX_LAT, full_extent.yMaximum() + pad))
-            try:
+            with contextlib.suppress(Exception):
                 to_merc = QgsCoordinateTransform(wgs84, QgsCoordinateReferenceSystem('EPSG:3857'), context.transformContext())
                 writer.setExtent(to_merc.transformBoundingBox(roi))
-            except Exception:
-                pass
-        try:
+        with contextlib.suppress(Exception):
             writer.setMetadata({'name': title, 'description': 'Made with Web Map Kit'})
-        except Exception:
-            pass
         if not writer.writeTiles(feedback):
             raise QgsProcessingException('QGIS could not write the vector tiles: %s' % writer.errorMessage())
         if feedback.isCanceled():

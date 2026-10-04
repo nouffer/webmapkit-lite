@@ -11,9 +11,10 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
+import html
 from qgis.PyQt.QtCore import QCoreApplication
+from .net import open_url
 from qgis.core import Qgis, QgsProcessingAlgorithm, QgsProcessingException, QgsProcessingParameterBoolean, QgsProcessingParameterFile, QgsProcessingParameterString, QgsSettings
 SETTINGS = 'webmapkit/r2/'
 SKIP_FILES = {'serve.py', 'CONFIG.md', 'config.backup.json', '.DS_Store', 'Thumbs.db'}
@@ -83,7 +84,7 @@ class R2Client:
         if 'Content-Length' in h:
             req.add_header('Content-Length', h['Content-Length'])
         try:
-            with urllib.request.urlopen(req, timeout=300) as r:
+            with open_url(req, timeout=300) as r:
                 return (r.status, r.read())
         except urllib.error.HTTPError as e:
             return (e.code, e.read())
@@ -126,21 +127,20 @@ class R2Client:
             for k, v in signed.items():
                 req.add_header(k, v)
             try:
-                with urllib.request.urlopen(req, timeout=60) as r:
+                with open_url(req, timeout=60) as r:
                     body = r.read()
             except urllib.error.HTTPError as e:
                 raise RuntimeError(_friendly_status(e.code, bucket) or 'Listing failed (HTTP %s): %s' % (e.code, _s3_error(e.read())))
-            root = ET.fromstring(body)
-            ns = root.tag.split('}')[0] + '}' if root.tag.startswith('{') else ''
-            for c in root.findall(ns + 'Contents'):
-                mod = c.findtext(ns + 'LastModified') or ''
+            text = body.decode('utf-8', 'replace')
+            for c in re.findall('<Contents>(.*?)</Contents>', text, re.S):
+                mod = _xml_value(c, 'LastModified') or ''
                 try:
                     dt = datetime.datetime.strptime(mod[:19], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=datetime.timezone.utc)
                 except ValueError:
                     dt = None
-                out.append({'key': c.findtext(ns + 'Key'), 'size': int(c.findtext(ns + 'Size') or 0), 'modified': dt})
-            if (root.findtext(ns + 'IsTruncated') or '').lower() == 'true':
-                token = root.findtext(ns + 'NextContinuationToken')
+                out.append({'key': _xml_value(c, 'Key'), 'size': int(_xml_value(c, 'Size') or 0), 'modified': dt})
+            if (_xml_value(text, 'IsTruncated') or '').lower() == 'true':
+                token = _xml_value(text, 'NextContinuationToken')
                 if not token:
                     break
             else:
@@ -182,6 +182,10 @@ def unique_name(client, bucket, base):
     while '%s-%d' % (base, i) in taken:
         i += 1
     return '%s-%d' % (base, i)
+
+def _xml_value(text, tag):
+    m = re.search('<%s>(.*?)</%s>' % (tag, tag), text, re.S)
+    return html.unescape(m.group(1)) if m else None
 
 def _s3_error(body):
     text = body.decode('utf-8', 'replace') if isinstance(body, bytes) else str(body)
@@ -332,7 +336,7 @@ class PublishWebMap(QgsProcessingAlgorithm):
             for i in range(tries):
                 try:
                     req = urllib.request.Request(url, headers=dict(ua, **extra or {}))
-                    with urllib.request.urlopen(req, timeout=20) as r:
+                    with open_url(req, timeout=20) as r:
                         return (r.status, r.read(7))
                 except urllib.error.HTTPError as e:
                     last = e

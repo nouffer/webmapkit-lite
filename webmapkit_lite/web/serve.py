@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Web Map Kit Lite · GPL-2.0-or-later · Byteloom (Pvt) Ltd · https://mapship.link/webmap-kit/
+import contextlib
 import http.server, os, re, socketserver, sys, webbrowser
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
 RANGE = re.compile('bytes=(\\d*)-(\\d*)$')
@@ -57,10 +58,8 @@ if __name__ == '__main__':
         url = f'http://localhost:{PORT}'
         print(f'Your map is running at {url}  (press Ctrl+C to stop)')
         if '--no-browser' not in sys.argv:
-            try:
+            with contextlib.suppress(Exception):
                 webbrowser.open(url)
-            except Exception:
-                pass
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

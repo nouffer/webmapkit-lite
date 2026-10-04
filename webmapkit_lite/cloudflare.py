@@ -6,6 +6,7 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from .net import open_url
 API = os.environ.get('WEBMAPKIT_CF_API', 'https://api.cloudflare.com/client/v4').rstrip('/')
 CF_KEY_LABEL = 'Web Map Kit'
 PERMISSIONS = [{'key': 'workers_r2', 'type': 'edit'}]
@@ -42,7 +43,7 @@ class Cloudflare:
         req.add_header('Content-Type', 'application/json')
         req.add_header('User-Agent', 'WebMapKit-QGIS')
         try:
-            with urllib.request.urlopen(req, timeout=30) as r:
+            with open_url(req, timeout=30) as r:
                 status, raw = (r.status, r.read())
         except urllib.error.HTTPError as e:
             status, raw = (e.code, e.read())
