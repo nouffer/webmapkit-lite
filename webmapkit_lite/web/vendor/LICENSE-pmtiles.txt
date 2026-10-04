@@ -1,0 +1,5 @@
+PMTiles JavaScript library v4.5.0
+https://github.com/protomaps/PMTiles
+Copyright (c) Brandon Liu / Protomaps
+Licensed under the BSD 3-Clause License. You may use and redistribute it in your maps.
+Full license text: https://github.com/protomaps/PMTiles/blob/main/LICENSE

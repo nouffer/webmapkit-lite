@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Web map</title>
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="map" aria-label="Map"></div>
+<div id="loading" aria-hidden="true"></div>
+
+<header id="titlebar">
+  <h1 id="title">Loading map…</h1>
+  <p id="description"></p>
+</header>
+
+<div id="search" hidden>
+  <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4a6.5 6.5 0 1 0 4.03 11.6l4.43 4.43 1.41-1.41-4.43-4.43A6.5 6.5 0 0 0 10.5 4zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z"/></svg>
+  <input id="search-input" type="search" placeholder="Search…" autocomplete="off" aria-label="Search the map">
+  <ul id="search-results" role="listbox"></ul>
+</div>
+
+<button id="legend-toggle" type="button" aria-expanded="false" aria-controls="legend">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 8l10 5 10-5-10-5zm-7.6 8.8L2 13l10 5 10-5-2.4-1.2L12 15.6l-7.6-3.8zm0 4L2 17l10 5 10-5-2.4-1.2L12 19.6l-7.6-3.8z"/></svg>
+  Layers
+</button>
+<aside id="legend" aria-label="Layers and legend"></aside>
+
+<div id="tooltip" hidden></div>
+
+<section id="sheet" aria-hidden="true" aria-label="Feature details">
+  <div class="sheet-grab" aria-hidden="true"></div>
+  <button id="sheet-close" type="button" aria-label="Close details">×</button>
+  <div id="sheet-body"></div>
+</section>
+
+<div id="notice" role="status" hidden></div>
+
+<script src="vendor/maplibre-gl.js"></script>
+<script src="vendor/pmtiles.js"></script>
+<script src="icons.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

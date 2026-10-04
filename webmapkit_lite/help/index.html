@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Map Kit Lite: help</title>
+<style>
+body{margin:0;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#101828;background:#fff}
+main{max-width:720px;margin:0 auto;padding:28px 20px 60px}h1{font-size:28px;margin:0 0 6px}h2{font-size:20px;margin:28px 0 8px}
+.lead{color:#667085;margin:0 0 20px}a{color:#0f766e}.box{background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:12px 16px}
+li{margin:6px 0}code{background:#f2f4f7;padding:1px 5px;border-radius:4px}
+</style></head><body><main>
+<h1>Web Map Kit Lite</h1>
+<p class="lead">Publish your QGIS project as a fast, shareable web map on your own free Cloudflare storage.</p>
+<p class="box">The full guide is online: <a href="https://mapship.link/webmap-kit/guide/">mapship.link/webmap-kit/guide</a></p>
+
+<h2>1. Set up hosting (once)</h2>
+<ol>
+<li>Click the Web Map Kit Lite icon on the <b>Web</b> toolbar, then <b>Hosting</b>.</li>
+<li>Create a free Cloudflare account if you don't have one, and switch on R2 (Cloudflare asks for a card; the free tier costs nothing).</li>
+<li>Click the link to create a token, paste it back, and the plugin sets up the rest.</li>
+</ol>
+
+<h2>2. Publish a map</h2>
+<ol>
+<li>Style your project in QGIS as usual and zoom to where visitors should start.</li>
+<li>Click the icon, check the title, layers and <b>Web address</b>, and click <b>Create web map</b>.</li>
+<li>Copy the link or open it. To update the map later, publish again with the same web address: the link stays the same.</li>
+</ol>
+
+<h2>Supported styles</h2>
+<p>Single symbol, categorized, graduated and proportional (size assistant) symbols, labels from one field, field aliases,
+hidden fields and layer transparency. Other styles are shown in one colour, and the finish screen tells you.</p>
+
+<h2>Costs and limits</h2>
+<ul>
+<li>Cloudflare R2's free tier includes 10 GB of storage and no bandwidth fees.</li>
+<li>Published maps are public to anyone with the link.</li>
+<li>To remove a map, delete its folder in Cloudflare: R2 → your bucket → the folder with the map's web address.</li>
+</ul>
+
+<h2>Web Map Kit (full edition)</h2>
+<p>Adds photos in popups, your own domain (maps.yourcompany.com), a list of all your published maps (open, embed, update, delete)
+and removes the "Made with Web Map Kit" link: <a href="https://mapship.link/webmap-kit/?utm_source=qgis-lite&amp;utm_medium=help">mapship.link/webmap-kit</a></p>
+
+<h2>Help</h2>
+<p>Email <a href="mailto:support@mapship.link">support@mapship.link</a> or open an issue on
+<a href="https://github.com/nouffer/webmapkit-lite/issues">GitHub</a>.</p>
+</main></body></html>

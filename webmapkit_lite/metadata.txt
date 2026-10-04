@@ -1,0 +1,18 @@
+[general]
+name=Web Map Kit Lite
+qgisMinimumVersion=3.28
+description=Publish your QGIS project as a fast, shareable web map (vector tiles, your styles, popups, search) to your own free Cloudflare storage.
+about=Web Map Kit Lite turns your QGIS layers into a fast, mobile-friendly web map and publishes it in one click to your own free Cloudflare R2 storage: no server, no subscription, no coding. It exports vector tiles (one PMTiles file) with a MapLibre viewer that keeps your QGIS colours, categories, graduated and proportional symbols, labels and field aliases, with popups, a legend with layer toggles, and search. Publish as many maps as you like; publishing again with the same web address updates the map at the same link. Maps show a small "Made with Web Map Kit" link. The full edition, Web Map Kit (paid, https://mapship.link/webmap-kit/), adds photos in popups, your own domain, a list of all published maps, and no badge. Cloudflare R2's free tier includes 10 GB of storage with no bandwidth fees; Cloudflare asks for a payment card when R2 is enabled.
+version=1.0.0
+author=Byteloom (Pvt) Ltd
+email=support@mapship.link
+homepage=https://mapship.link/webmap-kit/
+tracker=https://github.com/nouffer/webmapkit-lite/issues
+repository=https://github.com/nouffer/webmapkit-lite
+category=Web
+icon=icon.png
+tags=web,webmap,web map,export,publish,vector tiles,pmtiles,maplibre,cloudflare,r2,qgis2web,html,online,share
+experimental=False
+deprecated=False
+hasProcessingProvider=yes
+changelog=1.0.0 First release: the free edition of Web Map Kit.
