@@ -692,6 +692,8 @@ def plan_zooms(layers, minz, maxz, context, feedback):
             continue
         if ext.isEmpty() and geometry_kind(lyr) != 'point':
             continue
+        if lyr.featureCount() == 0 or ext.isNull() or (not all((math.isfinite(c) for c in (ext.xMinimum(), ext.yMinimum(), ext.xMaximum(), ext.yMaximum())))):
+            continue
         if geometry_kind(lyr) == 'point':
             npts += max(0, lyr.featureCount())
             pts = QgsRectangle(ext) if pts is None else pts.combineExtentWith(ext) or pts
@@ -1076,14 +1078,14 @@ class ExportWebMap(QgsProcessingAlgorithm):
         return result
 
     def _publish(self, out_dir, title, context, feedback):
-        from qgis.core import QgsApplication, QgsSettings
+        from qgis.core import QgsApplication
         alg = None
         for aid in ('script:publishwebmapr2', PROVIDER_ID + ':publishwebmapr2'):
             alg = QgsApplication.processingRegistry().algorithmById(aid)
             if alg:
                 break
-        st = QgsSettings()
-        creds = {k: st.value('webmapkit/r2/' + k, '') for k in ('account', 'bucket', 'access_key', 'secret', 'public_url')}
+        from . import credentials
+        creds = credentials.load()
         if alg is None:
             feedback.reportError('To publish, also add webmap_kit_publish.py to the Toolbox (see README).', False)
             return ''
@@ -1093,5 +1095,5 @@ class ExportWebMap(QgsProcessingAlgorithm):
         feedback.pushInfo('')
         feedback.pushInfo('Publishing to Cloudflare R2…')
         import processing
-        res = processing.run(alg.id(), {'FOLDER': out_dir, 'MAP_NAME': '', 'ACCOUNT': creds['account'], 'BUCKET': creds['bucket'], 'ACCESS_KEY': creds['access_key'], 'SECRET': creds['secret'], 'PUBLIC_URL': creds['public_url'], 'REMEMBER': False}, context=context, feedback=feedback, is_child_algorithm=True)
+        res = processing.run(alg.id(), {'FOLDER': out_dir, 'MAP_NAME': '', 'ACCOUNT': creds['account'], 'BUCKET': creds['bucket'], 'PUBLIC_URL': creds['public_url'], 'REMEMBER': False}, context=context, feedback=feedback, is_child_algorithm=True)
         return res.get('URL', '')

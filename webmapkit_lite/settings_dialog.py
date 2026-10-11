@@ -3,13 +3,12 @@
 from qgis.PyQt.QtCore import Qt, QUrl
 from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QApplication, QCheckBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout
-from qgis.core import QgsSettings
 from .publish_alg import SETTINGS, R2Client
 KEYS = ('account', 'bucket', 'access_key', 'secret', 'public_url', 'api_token', 'account_name', 'jurisdiction')
 
 def load_hosting():
-    st = QgsSettings()
-    return {k: (st.value(SETTINGS + k, '') or '').strip() for k in KEYS}
+    from . import credentials
+    return credentials.load()
 
 def hosting_ready(h=None):
     h = h or load_hosting()
@@ -116,8 +115,6 @@ class HostingDialog(QDialog):
             self._say("Couldn't reach Cloudflare (%s). Check your internet connection." % status, False)
 
     def save(self):
-        st = QgsSettings()
-        st.setValue(SETTINGS + 'api_token', '')
-        for k, v in self.values().items():
-            st.setValue(SETTINGS + k, v)
+        from . import credentials
+        credentials.save(api_token=None, **self.values())
         self.accept()

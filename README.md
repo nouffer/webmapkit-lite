@@ -9,8 +9,10 @@ No server, no subscription, no coding.
 - One click to publish; publishing again with the same web address updates the map at the same link
 - Maps show a small "Made with Web Map Kit" link
 
-**Web Map Kit (full edition)** adds photos in popups, your own domain (maps.yourcompany.com), a list of all your
-published maps (open, copy embed code, update, delete) and no badge: https://mapship.link/webmap-kit/
+**Web Map Kit (full edition)** adds response forms (people send answers and photos about places on your map back into
+QGIS, even without signal), maps saved on phones for field work, photos in popups, your own domain
+(maps.yourcompany.com), a list of all your published maps (open, copy embed code, update, delete) and no badge:
+https://mapship.link/webmap-kit/
 
 ## Install
 QGIS → Plugins → Manage and Install Plugins → search "Web Map Kit Lite".

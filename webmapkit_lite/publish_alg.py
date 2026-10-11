@@ -251,8 +251,8 @@ class PublishWebMap(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterString(self.MAP_NAME, self.tr('Map name in the link (letters, numbers, dashes)'), optional=True))
         self.addParameter(QgsProcessingParameterString(self.ACCOUNT, self.tr('Cloudflare Account ID'), defaultValue=st.value(SETTINGS + 'account', '')))
         self.addParameter(QgsProcessingParameterString(self.BUCKET, self.tr('R2 bucket name'), defaultValue=st.value(SETTINGS + 'bucket', '')))
-        self.addParameter(QgsProcessingParameterString(self.ACCESS_KEY, self.tr('R2 Access Key ID'), defaultValue=st.value(SETTINGS + 'access_key', '')))
-        self.addParameter(QgsProcessingParameterString(self.R2_SK, self.tr('R2 Secret Access Key'), defaultValue=st.value(SETTINGS + 'secret', '')))
+        self.addParameter(QgsProcessingParameterString(self.ACCESS_KEY, self.tr('R2 Access Key ID (empty = saved)'), optional=True))
+        self.addParameter(QgsProcessingParameterString(self.R2_SK, self.tr('R2 Secret Access Key (empty = saved)'), optional=True))
         self.addParameter(QgsProcessingParameterString(self.PUBLIC_URL, self.tr('Bucket public URL (r2.dev or your domain)'), defaultValue=st.value(SETTINGS + 'public_url', '')))
         self.addParameter(QgsProcessingParameterBoolean(self.REMEMBER, self.tr('Remember these settings on this computer'), defaultValue=True))
         for pid, label in ((self.PROJECT_ID, 'Project id (set by the Web Map Kit window)'), (self.PROJECT, 'Project name')):
@@ -270,15 +270,19 @@ class PublishWebMap(QgsProcessingAlgorithm):
         ak = self.parameterAsString(parameters, self.ACCESS_KEY, context).strip()
         sk = self.parameterAsString(parameters, self.R2_SK, context).strip()
         public = self.parameterAsString(parameters, self.PUBLIC_URL, context).strip().rstrip('/')
+        if not ak or not sk:
+            from . import credentials
+            saved = credentials.load()
+            if not account or saved['account'] == account:
+                account, ak, sk = (account or saved['account'], ak or saved['access_key'], sk or saved['secret'])
         missing = [n for n, v in [('Account ID', account), ('bucket', bucket), ('Access Key ID', ak), ('Secret Access Key', sk)] if not v]
         if missing:
             raise QgsProcessingException("Missing: %s. See the set-up steps in the tool's help." % ', '.join(missing))
         if public and (not public.startswith('http')):
             public = 'https://' + public
         if self.parameterAsBool(parameters, self.REMEMBER, context):
-            st = QgsSettings()
-            for k, v in [('account', account), ('bucket', bucket), ('access_key', ak), ('secret', sk), ('public_url', public)]:
-                st.setValue(SETTINGS + k, v)
+            from . import credentials
+            credentials.save(account=account, bucket=bucket, access_key=ak, secret=sk, public_url=public)
         client = R2Client(account, ak, sk, endpoint=os.environ.get('WEBMAPKIT_R2_ENDPOINT'))
         feedback.setProgressText('Checking the bucket…')
         status = client.bucket_exists(bucket)

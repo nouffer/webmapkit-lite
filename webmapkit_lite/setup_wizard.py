@@ -4,7 +4,6 @@ import time
 from qgis.PyQt.QtCore import Qt, QTimer, QUrl
 from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QButtonGroup, QCheckBox, QComboBox, QDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QRadioButton, QStackedWidget, QToolButton, QVBoxLayout, QWidget
-from qgis.core import QgsSettings
 from . import cloudflare as cf
 from .common import Worker
 from .edition import UPGRADE_URL
@@ -32,9 +31,8 @@ def _open(url):
     QDesktopServices.openUrl(QUrl(url))
 
 def save_hosting(**values):
-    st = QgsSettings()
-    for k, v in values.items():
-        st.setValue(SETTINGS + k, v or '')
+    from . import credentials
+    credentials.save(**values)
 
 class CheckRow(QWidget):
 

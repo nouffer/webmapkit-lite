@@ -10,7 +10,7 @@ from qgis.PyQt.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QFi
 from qgis.core import QgsIconUtils, QgsProcessingContext, QgsProcessingException, QgsProcessingFeedback, QgsProject, QgsVectorLayer
 from .export_alg import geometry_kind, plan_zooms
 from .common import Worker, ago, friendly_error, project_map_id
-from .edition import PROVIDER_ID, NAME, UPGRADE_PITCH, UPGRADE_URL, open_upgrade
+from .edition import FORMS_URL, PROVIDER_ID, NAME, UPGRADE_PITCH, UPGRADE_URL, open_upgrade
 from .publish_alg import client_from_settings, map_info, slug, unique_name
 from .settings_dialog import hosting_ready, load_hosting
 SCOPE = 'webmapkit'
@@ -328,12 +328,24 @@ class WebMapDialog(QDialog):
         arow.addWidget(self.preview_btn)
         arow.addWidget(self.publish_now)
         arow.addWidget(folder_btn)
-        self.maps_btn = QPushButton('Remove the badge, add photos…')
+        self.maps_btn = QPushButton('Forms, photos, your domain…')
         self.maps_btn.setToolTip(UPGRADE_PITCH)
         self.maps_btn.clicked.connect(open_upgrade)
         arow.addWidget(self.maps_btn)
         arow.addStretch(1)
         v.addLayout(arow)
+        self.next_box = QFrame()
+        self.next_box.setStyleSheet('QFrame{background:#f0fdf9;border:1px solid #99f6e4;border-radius:8px;}QLabel{border:none;background:transparent;}')
+        nb = QHBoxLayout(self.next_box)
+        nb.setContentsMargins(12, 10, 12, 10)
+        nl = _label('<b>Next: let people answer about places on this map.</b> With Web Map Kit 1.3 visitors send answers and photos from their phone, even without signal, and you review them in QGIS.', 'hint')
+        nl.setTextFormat(Qt.RichText)
+        nb.addWidget(nl, 1)
+        see = QPushButton('See how it works')
+        see.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(FORMS_URL)))
+        nb.addWidget(see, 0, Qt.AlignVCenter)
+        self.next_box.setVisible(False)
+        v.addWidget(self.next_box)
         self.notes = _label('', 'hint')
         self.notes.setTextFormat(Qt.RichText)
         self.notes.setOpenExternalLinks(True)
@@ -686,7 +698,7 @@ class WebMapDialog(QDialog):
             ctx = QgsProcessingContext()
             ctx.setProject(self.project)
         try:
-            res = processing.run(PROVIDER_ID + ':publishwebmapr2', {'FOLDER': self.result_dir, 'MAP_NAME': getattr(self, 'publish_name', None) or self._map_name(), 'ACCOUNT': h['account'], 'BUCKET': h['bucket'], 'ACCESS_KEY': h['access_key'], 'SECRET': h['secret'], 'PUBLIC_URL': h['public_url'], 'REMEMBER': False, 'PROJECT_ID': project_map_id(self.project), 'PROJECT': os.path.basename(self.project.fileName() or '') or self.project.title()}, context=ctx, feedback=self.feedback)
+            res = processing.run(PROVIDER_ID + ':publishwebmapr2', {'FOLDER': self.result_dir, 'MAP_NAME': getattr(self, 'publish_name', None) or self._map_name(), 'ACCOUNT': h['account'], 'BUCKET': h['bucket'], 'PUBLIC_URL': h['public_url'], 'REMEMBER': False, 'PROJECT_ID': project_map_id(self.project), 'PROJECT': os.path.basename(self.project.fileName() or '') or self.project.title()}, context=ctx, feedback=self.feedback)
         except Exception as e:
             self._failed(e, published=False)
             return False
@@ -720,6 +732,7 @@ class WebMapDialog(QDialog):
         self.done_text.setText(stats + 'Files saved in %s' % self.result_dir)
         self.link.setCursorPosition(0)
         self.link_row.setVisible(published)
+        self.next_box.setVisible(published)
         self.link.setText(self.result_url)
         self.link.setCursorPosition(0)
         self.publish_now.setVisible(not published)
